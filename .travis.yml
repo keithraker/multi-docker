@@ -1,0 +1,23 @@
+sudo: required
+services:
+   - docker
+
+before_install:
+   - docker build -t keithraker/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+   - docker run keithraker/react-test npm test -- --coverage
+
+after_success:
+   - docker build -t keithraker/multi-client ./client
+   - docker build -t keithraker/multi-nginx ./nginx
+   - docker build -t keithraker/multi-server ./server
+   - docker build -t keithraker/multi-worker ./worker
+
+   # Login to the Docker CI
+   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+   # Push images to Docker Hub
+   - docker push keithraker/multi-client
+   - docker push keithraker/multi-nginx
+   - docker push keithraker/multi-server
+   - docker push keithraker/multi-worker
